@@ -2,20 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-
+#include "../include/block.h"
+#include "../include/display.h"
 #define LEFT 0
 #define RIGHT 1
 #define DOWN 2
 #define ROTATE 3
-
-#define I_BLOCK 0
-#define	T_BLOCK 1
-#define S_BLOCK 2
-#define Z_BLOCK 3
-#define L_BLOCK 4
-#define J_BLOCK 5
-#define O_BLOCK 6
-
 
 #define GAME_START 0
 #define GAME_END 1
@@ -119,3 +111,4 @@ static struct result
 	int min;
 	int rank;
 }temp_result;
+

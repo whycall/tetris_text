@@ -1,3 +1,12 @@
+#define I_BLOCK 0
+#define	T_BLOCK 1
+#define S_BLOCK 2
+#define Z_BLOCK 3
+#define L_BLOCK 4
+#define J_BLOCK 5
+#define O_BLOCK 6
+
+
 char i_block[4][4][4] =
 	{
 			1, 1, 1, 1,    0, 0, 0, 0,    0, 0, 0, 0,    0,0,0,0,

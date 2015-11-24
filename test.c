@@ -11,4 +11,23 @@
 #define DOWN 80
 #define SPACE 32
 
-void 
+#define SINGLE 0
+#define PLAYER1 1
+#define PLAYER2 2
+#define COMPUTER 3
+
+#define ACTIVE_BLOCK ((block.type+11)*(-1))
+#define CEILLING -1
+#define EMPTY 0
+#define WALL 1
+#define INACTIVE_BLOCK (block.type+11)
+
+
+
+void gotoxy(int x,int y) {
+
+	COORD pos={2*x,y};
+
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
+
+}

@@ -31,3 +31,70 @@ void gotoxy(int x,int y) {
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),pos);
 
 }
+typedef enum { NOCURSOR, SOLIDCURSOR, NORMALCURSOR } CURSOR_TYPE;
+
+void setcursortype(CURSOR_TYPE c){
+
+     CONSOLE_CURSOR_INFO CurInfo;
+
+ 
+
+     switch (c) {
+
+     case NOCURSOR:
+
+          CurInfo.dwSize=1;
+
+          CurInfo.bVisible=FALSE;
+
+          break;
+
+     case SOLIDCURSOR:
+
+          CurInfo.dwSize=100;
+
+          CurInfo.bVisible=TRUE;
+
+          break;
+
+     case NORMALCURSOR:
+
+          CurInfo.dwSize=20;
+
+          CurInfo.bVisible=TRUE;
+
+          break;
+
+     }
+
+     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE),&CurInfo);
+
+}
+
+
+
+class Blocks{
+
+public:
+
+	Blocks(void){
+
+		type_next=rand()%7;
+
+	}
+
+	static const int shape[7][4][4][4]; 
+
+	int x;
+
+	int y;
+
+	int type;
+
+	int rotation;
+
+	int type_next;
+
+	int getColor(int num);
+
+};

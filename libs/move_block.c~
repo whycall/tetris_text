@@ -10,31 +10,38 @@
 #include <time.h>
 #include "../include/display.h"
 #include "../include/block.h"
-/* 블록이 이동, 회전하기 전에 충돌되는 블록이나 벽이 없는지 확인하는 함수*/
-int collision_test(int command)
+
+int move_block(int command)
 {
 	int i, j;
-	int tempx, tempy;
+	int newx, newy;
 	int oldx, oldy;
-	int temp_block_state;
-	char (*block_pointer)[4][4][4];
-	char temp_tetris_table[21][10];
+	int old_block_state;
+	char (*block_pointer)[4][4][4] = NULL;
 
-	oldx = tempx = x;
-	oldy = tempy = y;
-	temp_block_state = block_state;
+	newx = x;
+	newy = y;
 
-	switch(command)
+	old_block_state = block_state;
+
+	if(collision_test(command) == 0)
 	{
-		case	LEFT :	tempx--;
-									break;
-		case	RIGHT :	tempx++;
-									break;
-		case	DOWN :	tempy++;
-									break;
-		case ROTATE : temp_block_state++;
-									temp_block_state %=  4;
-									break;
+		switch(command)
+		{
+			case	LEFT :	newx--;
+										break;
+			case	RIGHT :	newx++;
+										break;
+			case	DOWN :	newy++;
+										break;
+			case ROTATE :	block_state++;
+										block_state %= 4;
+										break;
+		}
+	}
+	else
+	{
+		return 1;
 	}
 
 	switch(block_number)
@@ -55,35 +62,30 @@ int collision_test(int command)
 										break;
 	}
 
-	for(i = 0 ; i < 21 ; i++)
-	{
-		for(j = 0 ; j < 10 ; j++)
-		{
-			temp_tetris_table[i][j] = tetris_table[i][j];
-		}
-	}
-
 	for(i = 0, oldy = y ; i < 4 ; i++, oldy++)
 	{
 		for(j = 0, oldx = x ; j < 4 ; j++, oldx++)
 		{
 			if(oldx > 0 && oldx < 9 && oldy < 20 && oldy > 0)
-			{
-				if((*block_pointer)[block_state][i][j] == 1)
-						temp_tetris_table[oldy][oldx] = 0;
-			}
+				if((*block_pointer)[old_block_state][i][j] == 1)
+						tetris_table[oldy][oldx] = 0;
+
 		}
 	}
 
-	for(i = 0 ; i < 4 ; i++)
-	{
-		for(j = 0 ; j < 4 ; j++)
-		{
+	x = newx;
+	y = newy;
 
-			if(temp_tetris_table[tempy+i][tempx+j] == 1 && (*block_pointer)[temp_block_state][i][j] == 1)
-					return 1;
+	for(i = 0, newy = y ; i < 4 ; i++, newy++)
+	{
+		for(j = 0, newx = x ; j < 4 ; j++, newx++)
+		{
+			if(newx > 0 && newx < 9 && newy < 20 && newy > 0)
+				if((*block_pointer)[block_state][i][j] == 1)
+					tetris_table[newy][newx] = (*block_pointer)[block_state][i][j];
 		}
 	}
 
 	return 0;
 }
+

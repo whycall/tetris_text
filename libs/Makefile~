@@ -2,9 +2,9 @@
 .PHONY: clean
 
 
-libfuncs.a: collision.o move_block.c
-	ar rv libfuncs.a collision.o 
+libfuncs.a: block.c move_block.c
+	ar rv libfuncs.a 
 %.o: %.c
 	gcc -c -g -Wall $< -o $@  
 clean:
-	rm -f libfuncs.a collision.o move_block.c
+	rm -f libfuncs.a block.c move_block.c

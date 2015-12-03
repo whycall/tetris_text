@@ -415,3 +415,205 @@ Tetris::Tetris(int game_x,int game_y,int status_x,int status_y, int owner){
 	initialGame(); 
 	newBlock(); 
 }
+
+void Tetris::initialGame(void){
+	int i,j;
+
+	for(j=1;j<WIDTH;j++){ 
+		gameOrg[3][j]=CEILLING;
+	}
+	for(i=1;i<HEIGHT-1;i++){ 
+		gameOrg[i][0]=WALL;
+		gameOrg[i][WIDTH-1]=WALL;
+	}
+	for(j=0;j<WIDTH;j++){
+		gameOrg[HEIGHT-1][j]=WALL;
+	}
+
+	gotoxy(status_x, status_y);
+	switch(owner){
+	case 0:
+		printf("< PLAYER >");
+		attackQueue_x=game_x-1;
+		break;
+	case 1:
+		printf("<PLAYER1>");
+		attackQueue_x=game_x-1;
+		break;
+	case 2:
+		printf("<PLAYER2>");
+		attackQueue_x=game_x+WIDTH;
+		break;
+	case 3:
+		printf("<COMPUTER>");
+		attackQueue_x=game_x+WIDTH;
+		break;
+	}
+	gotoxy(status_x, status_y+1);
+	printf("Next:");
+	gotoxy(status_x, status_y+6);
+	if(level==10) printf("Level:MAX");
+	else printf("Level:%2d",level);
+	gotoxy(status_x, status_y+7);
+	printf("Speed:%2d",speed[level]);
+}
+void Tetris::getKey(){
+	dropBlock();
+	if(keyCnt>0){
+		keyCnt--;
+		return;
+	}
+	if(owner==COMPUTER)comCheck();
+
+	keyCnt=3;
+
+	if(((owner==SINGLE||owner==PLAYER2)&&GetAsyncKeyState(VK_LEFT)) || 
+		(owner==PLAYER1&&GetAsyncKeyState('F')) ||
+		(owner==COMPUTER&&comOutput==LEFT))
+		if(checkCrush(block.x-1,block.y,block.rotation)==true) move_block(LEFT); 
+	if(((owner==SINGLE||owner==PLAYER2)&&GetAsyncKeyState(VK_RIGHT)) || 
+		(owner==PLAYER1&&GetAsyncKeyState('H')) ||
+		(owner==COMPUTER&&comOutput==RIGHT))
+		if(checkCrush(block.x+1,block.y,block.rotation)==true) move_block(RIGHT);
+	if(((owner==SINGLE||owner==PLAYER2)&&GetAsyncKeyState(VK_DOWN)) || (owner==PLAYER1&&GetAsyncKeyState('G')) ||
+		(owner==COMPUTER&&comOutput==DOWN)) 
+		if(checkCrush(block.x,block.y+1,block.rotation)==true) move_block(DOWN);
+	if(((owner==SINGLE||owner==PLAYER2)&&GetAsyncKeyState(VK_UP)) || (owner==PLAYER1&&GetAsyncKeyState('T')) ||
+		(owner==COMPUTER&&comOutput==ROTATE)) {
+		if(checkCrush(block.x,block.y,(block.rotation+1)%4)==true) move_block(ROTATE);
+		else if(crush_on==true&&checkCrush(block.x,block.y-1,(block.rotation+1)%4)==true) move_block(UP_ROTATE); 
+	}
+	if((owner==SINGLE&&(GetAsyncKeyState(VK_SPACE)||GetAsyncKeyState('L'))) || 
+		(owner==PLAYER2&&GetAsyncKeyState('L')) || 
+		(owner==PLAYER1&&GetAsyncKeyState('Q')) ||
+		(owner==COMPUTER&&comOutput==SPACE)){
+		while(crush_on==false){
+			dropBlock();
+			score+=level;
+		}
+		fCnt=0;
+	}
+
+
+	if(GetAsyncKeyState('Z')){
+		block.type_next=1;
+	}
+
+}
+void Tetris::move_block(int dir){ 
+	int i,j;
+	
+	for(i=0;i<4;i++){
+		for(j=0;j<4;j++){
+			if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i][block.x+j]=EMPTY;
+		}
+	}
+
+	switch(dir){
+	case LEFT:
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i][block.x+j-1]=ACTIVE_BLOCK;
+			}
+		}
+		block.x--;
+		break;
+	case RIGHT: 
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i][block.x+j+1]=ACTIVE_BLOCK;
+			}
+		}
+		block.x++;		
+		break;
+	case DOWN:
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i+1][block.x+j]=ACTIVE_BLOCK;
+			}
+		}
+		block.y++;		
+		break;
+	case ROTATE:
+		block.rotation=(block.rotation+1)%4;
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i][block.x+j]=ACTIVE_BLOCK;
+			}
+		}
+		break;
+	case UP_ROTATE:
+		block.rotation=(block.rotation+1)%4;
+		for(i=0;i<4;i++){
+			for(j=0;j<4;j++){
+				if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i-1][block.x+j]=ACTIVE_BLOCK;
+			}
+		}
+		block.y--;
+		upRotate_on=true;
+		break;
+	}
+}
+void Tetris::checkLine(void){
+	int i, j;
+	
+	int	block_amount;
+	int combo=0;
+	
+	for(i=HEIGHT-2;i>3;){
+		block_amount=0;
+		for(j=1;j<WIDTH-1;j++){ 
+			if(gameOrg[i][j]>0) block_amount++;
+		}
+		if(block_amount==WIDTH-2){
+			score+=100*level;
+			lineCnt++;
+			combo++; 
+
+			if(pushAttackRegP>0){ 
+				for(int m=1;m<WIDTH-1;m++){
+					if(m>block.x&&m<block.x+4&&block.shape[block.type][block.rotation][i-block.y][m-block.x]==1) pushAttackReg[pushAttackRegP][m]=0;
+					else pushAttackReg[pushAttackRegP][m]=16;
+				}
+				pushAttackRegP--;
+				block.y++;
+			}
+
+			for(int k=i;k>1;k--){ 
+				for(int l=1;l<WIDTH-1;l++){
+					if(gameOrg[k-1][l]!=CEILLING) gameOrg[k][l]=gameOrg[k-1][l];
+					if(gameOrg[k-1][l]==CEILLING) gameOrg[k][l]=EMPTY; 
+				}
+			}
+		}
+		else i--;
+	}
+
+	if(combo){ 
+		if(combo>1){ //2콤보이상인 경우 메세지를 띄움
+			drawGame();
+			gameMsg((WIDTH/2)-1,block.y-2,0,combo);
+			score+=(combo*level*100);
+		} else { 
+			if(pushAttackRegP>0){
+				pushAttackRegP++;
+				for(int m=1;m<WIDTH-1;m++){
+					pushAttackReg[pushAttackRegP][m]=-1;
+				}
+			}
+		}
+		if(lineCnt>5&&level<10){
+			level++;
+			lineCnt=0;
+			if(speed[level]<speed[level-1]) gameMsg((WIDTH/2)-1,5,1);
+			else  gameMsg((WIDTH/2)-1,5,2);
+			
+			gotoxy(status_x, status_y+6);
+			if(level==10) printf("Level:MAX");
+			else printf("Level:%2d",level);
+			gotoxy(status_x, status_y+7);
+			printf("Speed:%2d",speed[level]);
+		}
+	}
+	for(int i=1;i<WIDTH-2;i++) if(gameOrg[3][i]>0) gameOver_on=true;
+}

@@ -10,6 +10,7 @@
 #include <time.h>
 #include "../include/display.h"
 #include "../include/block.h"
+
 /* 블록이 이동, 회전하기 전에 충돌되는 블록이나 벽이 없는지 확인하는 함수*/
 int collision_test(int command)
 {
@@ -87,3 +88,5 @@ int collision_test(int command)
 
 	return 0;
 }
+
+

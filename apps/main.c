@@ -2,15 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include "../include/define.h"
 #include "../include/block.h"
-#include "../include/display.h"
-#define LEFT 0
-#define RIGHT 1
-#define DOWN 2
-#define ROTATE 3
+#include "../include/global.h"
 
-#define GAME_START 0
-#define GAME_END 1
+int display_menu(void); /* 메뉴를 보여줌 */
+int init_tetris_table(void); /*테트리스판을 초기화 한다. 벽과 공간을 나눔*/
+int display_tetris_table(void); /* 현재의 테트리스판을 보여준다. 블록이 놓이고 쌓인 현재 상태를 보여줌*/
+int game_start(void); /* 게임 시작시 호출되는 함수.   game변수를 참조하여 게임을 종료하거나 시작함 . 게임 시작시 refresh()함수가 콜백함수로 설정되고 타이머를 등록함. */
+int refresh(int);/* 타이머에 콜백함수로 등록되어 계속 새로고침 하면서 호출되는 함수. 키입력 확인,  화면새로고침, 한줄완성검사등의 계속 상태가 변함을 확인해야 되는 함수를 호출한다 */
+int move_block(int);/*이동, 회전키가 입력되면, 충돌검사후 이동시킨다*/
+int drop(void);/* 충돌되기 전까지 블록을 다운시킨다.*/
+int collision_test(int); /* 블록이 이동, 회전하기 전에 충돌되는 블록이나 벽이 없는지 확인하는 함수*/
+int check_one_line(void);/* 한줄이 완성되었는지 확인하는 함수. 완성되면 한줄을 지우고, 점수에 1000점을 더한다*/
+int print_result(void);/* 메뉴에서 기록출력시 호출되어 기록을 출력하는 함수*/
+int search_result(void); /*메뉴에서 기록검색시 호출되어 기러고을 검색하는 함수*/
+int getch(void);/*문자를 바로 입력 받을 수 있는 함수*/
+
 
 int game_start(void)
 { 
@@ -89,29 +97,290 @@ int game_start(void)
   
    return 0;
  } 
-/* 테트리스 판을 2차원 배열로 표현
- * 양옆 2줄과 맨 아래 한줄은 벽
- * 따라서  20*8 이
- * 실제 테트로미노 블록들이
- * 움직이고 놓이는 공간이됨*/
-char tetris_table[21][10];
 
-/* 게임 종료때 마다
- * 이름과 득점점수와
- * 날짜, 시간이저장되는 구조체
- * */
-static struct result
+
+
+int drop(void)
 {
-	char name[30];
-	long point;
-	int year;
-	int month;
-	int day;
-	int hour;
-	int min;
-	int rank;
-}temp_result;
+	while(!collision_test(DOWN))
+		move_block(DOWN);
 
+	return 0;
+}
+int collision_test(int command)
+{
+	int i, j;
+	int tempx, tempy;
+	int oldx, oldy;
+	int temp_block_state;
+	char (*block_pointer)[4][4][4];
+	char temp_tetris_table[21][10];
+
+	oldx = tempx = x;
+	oldy = tempy = y;
+	temp_block_state = block_state;
+
+	switch(command)
+	{
+		case	LEFT :	tempx--;
+									break;
+		case	RIGHT :	tempx++;
+									break;
+		case	DOWN :	tempy++;
+									break;
+		case ROTATE : temp_block_state++;
+									temp_block_state %=  4;
+									break;
+	}
+
+	switch(block_number)
+	{
+		case I_BLOCK :	block_pointer = &i_block;
+								  	break;
+		case T_BLOCK :	block_pointer = &t_block;
+										break;
+		case S_BLOCK :  block_pointer = &s_block;
+										break;
+		case Z_BLOCK : 	block_pointer = &z_block;
+										break;
+		case L_BLOCK : 	block_pointer = &l_block;
+										break;
+		case J_BLOCK : 	block_pointer = &j_block;
+										break;
+		case O_BLOCK :	block_pointer = &o_block;
+										break;
+	}
+
+	for(i = 0 ; i < 21 ; i++)
+	{
+		for(j = 0 ; j < 10 ; j++)
+		{
+			temp_tetris_table[i][j] = tetris_table[i][j];
+		}
+	}
+
+	for(i = 0, oldy = y ; i < 4 ; i++, oldy++)
+	{
+		for(j = 0, oldx = x ; j < 4 ; j++, oldx++)
+		{
+			if(oldx > 0 && oldx < 9 && oldy < 20 && oldy > 0)
+			{
+				if((*block_pointer)[block_state][i][j] == 1)
+						temp_tetris_table[oldy][oldx] = 0;
+			}
+		}
+	}
+
+	for(i = 0 ; i < 4 ; i++)
+	{
+		for(j = 0 ; j < 4 ; j++)
+		{
+
+			if(temp_tetris_table[tempy+i][tempx+j] == 1 && (*block_pointer)[temp_block_state][i][j] == 1)
+					return 1;
+		}
+	}
+
+	return 0;
+}
+int check_one_line(void)
+{
+	int i, j;
+	int ti, tj;
+	int line_hole;
+
+	for(i = 19 ; i > 0 ; i--)
+	{
+		line_hole = 0;
+		for(j = 1 ; j < 9 ; j++)
+		{
+			if(tetris_table[i][j] == 0)
+			{
+				line_hole = 1;
+			}
+		}
+
+		if(line_hole == 0)
+		{
+			point += 1000;
+			for(ti = i ; ti > 0 ; ti--)
+			{
+				for(tj = 0 ; tj < 9 ; tj++)
+				{
+					tetris_table[ti][tj] = tetris_table[ti-1][tj];
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+int move_block(int command)
+{
+	int i, j;
+	int newx, newy;
+	int oldx, oldy;
+	int old_block_state;
+	char (*block_pointer)[4][4][4] = NULL;
+
+	newx = x;
+	newy = y;
+
+	old_block_state = block_state;
+
+	if(collision_test(command) == 0)
+	{
+		switch(command)
+		{
+			case	LEFT :	newx--;
+										break;
+			case	RIGHT :	newx++;
+										break;
+			case	DOWN :	newy++;
+										break;
+			case ROTATE :	block_state++;
+										block_state %= 4;
+										break;
+		}
+	}
+	else
+	{
+		return 1;
+	}
+
+	switch(block_number)
+	{
+		case I_BLOCK :	block_pointer = &i_block;
+								  	break;
+		case T_BLOCK :	block_pointer = &t_block;
+										break;
+		case S_BLOCK :  block_pointer = &s_block;
+										break;
+		case Z_BLOCK : 	block_pointer = &z_block;
+										break;
+		case L_BLOCK : 	block_pointer = &l_block;
+										break;
+		case J_BLOCK : 	block_pointer = &j_block;
+										break;
+		case O_BLOCK :	block_pointer = &o_block;
+										break;
+	}
+
+	for(i = 0, oldy = y ; i < 4 ; i++, oldy++)
+	{
+		for(j = 0, oldx = x ; j < 4 ; j++, oldx++)
+		{
+			if(oldx > 0 && oldx < 9 && oldy < 20 && oldy > 0)
+				if((*block_pointer)[old_block_state][i][j] == 1)
+						tetris_table[oldy][oldx] = 0;
+
+		}
+	}
+
+	x = newx;
+	y = newy;
+
+	for(i = 0, newy = y ; i < 4 ; i++, newy++)
+	{
+		for(j = 0, newx = x ; j < 4 ; j++, newx++)
+		{
+			if(newx > 0 && newx < 9 && newy < 20 && newy > 0)
+				if((*block_pointer)[block_state][i][j] == 1)
+					tetris_table[newy][newx] = (*block_pointer)[block_state][i][j];
+		}
+	}
+
+	return 0;
+}
+int display_menu(void)
+{
+	int menu = 0;
+
+	while(1)
+	{
+		system("clear");
+		printf("\n\n\t\t\t\tText Tetris");
+		printf("\n\t\t\t============================");
+		printf("\n\t\t\t\t게 임 메 뉴\t\n");
+		printf("\n\t\t\t============================");
+		printf("\n\t\t\t=\t1) 게임 시작\t   =");
+		printf("\n\t\t\t=\t2) 기록 검색\t   =");
+		printf("\n\t\t\t=\t3) 기록 출력\t   =");
+		printf("\n\t\t\t=\t4) 종료\t\t   =");
+		printf("\n\t\t\t============================");
+		printf("\n\t\t\t\t\t 선택 : ");
+		scanf("%d",&menu);
+		if(menu < 1 || menu > 4)
+		{
+			continue;
+		}
+		else
+		{
+			return menu;
+		}
+	}
+	return 0;
+}
+
+int display_tetris_table(void)
+{
+	int i, j;
+	char (*block_pointer)[4][4][4] = NULL;
+
+	switch(next_block_number)
+	{
+		case I_BLOCK :	block_pointer = &i_block;
+								  	break;
+		case T_BLOCK :	block_pointer = &t_block;
+										break;
+		case S_BLOCK :  block_pointer = &s_block;
+										break;
+		case Z_BLOCK : 	block_pointer = &z_block;
+										break;
+		case L_BLOCK : 	block_pointer = &l_block;
+										break;
+		case J_BLOCK : 	block_pointer = &j_block;
+										break;
+		case O_BLOCK :	block_pointer = &o_block;
+										break;
+	}
+
+	system("clear");
+
+
+	printf("\n\n Next Block\n");
+
+	for(i = 0 ; i < 4 ; i++)
+	{
+		printf("\n ");
+		for(j = 0 ; j < 4 ; j++)
+		{
+			if((*block_pointer)[0][i][j] == 1)
+				printf("#");
+			else if((*block_pointer)[0][i][j] == 0)
+				printf(" ");
+		}
+	}
+
+	for(i = 2 ; i < 21 ; i++)
+	{
+		printf("\t");
+		for(j = 0 ; j < 10 ; j++)
+		{
+			if(j == 0 || j == 9|| (i == 20 && (j > 1 || j < 9)))
+			{
+				printf("@");
+			}
+			else if(tetris_table[i][j] == 1)
+				printf("#");
+			else if(tetris_table[i][j] == 0)
+				printf(" ");
+		}
+		printf("\n");
+	}
+
+	return 0;
+}
 int print_result(void)
 {
 	FILE *fp = NULL;

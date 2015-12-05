@@ -1,10 +1,9 @@
-
 .PHONY: clean
 
 
-libfuncs.a: block.o move_block.o
-	ar rv libfuncs.a 
+libfuncs.a: init_tetris_table.o getchar.o
+	ar rv libfuncs.a init_tetris_table.o getchar.o
 %.o: %.c
 	gcc -c -g -Wall $< -o $@  
 clean:
-	rm -f libfuncs.a block.o move_block.o
+	rm -f libfuncs.a init_tetris_table.o getchar.o

@@ -617,3 +617,354 @@ void Tetris::checkLine(void){
 	}
 	for(int i=1;i<WIDTH-2;i++) if(gameOrg[3][i]>0) gameOver_on=true;
 }
+
+void Tetris::dropBlock(void){
+	if(fCnt>0) fCnt--;
+	bool can_down=checkCrush(block.x,block.y+1,block.rotation);
+
+	if(crush_on==true && can_down==true){
+		move_block(DOWN);
+		if(upRotate_on==false) fCnt=speed[level];
+		crush_on=false;
+	}
+	if(crush_on==true && can_down==false && fCnt==0){
+		if(gameDelayCnt==-1){
+			drawGame();
+			gameDelay(5);
+		}
+		else if(gameDelayCnt==0){
+			for(int i=0;i<HEIGHT;i++){ 
+				for(int j=0;j<WIDTH;j++){
+					if(gameOrg[i][j]==ACTIVE_BLOCK) gameOrg[i][j]=INACTIVE_BLOCK;
+				}
+			}
+			gameDelayCnt=-1;
+			upRotate_on=false;
+			crush_on=false;
+			checkLine(); 
+			getAttack();
+			if(gameOver_on==false) newBlock(); 
+			fCnt=speed[level]; 
+		}
+		return; //함수 종료 
+	}
+	if(crush_on==false && can_down==true && fCnt==0){
+		move_block(DOWN);
+		if(upRotate_on==false) fCnt=speed[level];
+	}
+	if(crush_on==false && can_down==false){
+		crush_on=true;
+		if(upRotate_on==false) fCnt=speed[0];
+	}
+}
+bool Tetris::checkCrush(int x, int y, int rotation){
+	int i,j;
+	
+	for(i=0;i<4;i++){
+		for(j=0;j<4;j++){
+			if(block.shape[block.type][rotation][i][j]==1&&gameOrg[y+i][x+j]>0) return false;
+		}
+	}	
+	return true;
+};
+void Tetris::newBlock(void){
+	int i, j;	
+if(owner==COMPUTER) comCheck_on=true;
+	
+	block.x=(WIDTH/2)-1;
+	block.y=0; 
+	block.type=block.type_next;
+	block.type_next=rand()%7;
+	block.rotation=0; 
+
+	for(i=0;i<4;i++){
+		for(j=0;j<4;j++){
+			if(block.shape[block.type][block.rotation][i][j]==1) gameOrg[block.y+i][block.x+j]=ACTIVE_BLOCK;
+		}
+	}
+	
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), block.type_next+2);
+	for(i=1;i<3;i++){ 
+		for(j=0;j<4;j++){
+			gotoxy(status_x+j,status_y+i+2);
+			if(block.shape[block.type_next][0][i][j]==1) printf("■");
+			else printf("  ");
+		}
+	}
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+}
+void Tetris::drawGame(void){ 
+	int i, j;	
+	
+	for(j=1;j<WIDTH-1;j++){ 
+		if(gameOrg[3][j]==EMPTY) gameOrg[3][j]=CEILLING;
+	}
+	for(i=0;i<HEIGHT;i++){
+		for(j=0;j<WIDTH;j++){
+			if(gameCpy[i][j]!=gameOrg[i][j]){
+				gotoxy(game_x+j,game_y+i); 
+				if(gameOrg[i][j]==EMPTY) printf("  ");
+				else if(gameOrg[i][j]==CEILLING){
+					SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+					printf(". ");
+				}else if(gameOrg[i][j]==WALL){
+					SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+					printf("▩"); 
+				}else if(gameOrg[i][j]<0){
+					SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), block.getColor(gameOrg[i][j]));
+					printf("▣");
+				}else if(gameOrg[i][j]>0){
+					SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), block.getColor(gameOrg[i][j]));
+					printf("■");
+				}	
+			}
+		}
+	}
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+
+	for(i=0;i<HEIGHT;i++){ 
+		for(j=0;j<WIDTH;j++){
+			gameCpy[i][j]=gameOrg[i][j];
+		}
+	}
+}
+void Tetris::gameOver(void){
+	gameOverCnt++;
+	if(gameOverCnt==0) gameOverP=0;
+	if(gameOverP<HEIGHT-1&&gameOverCnt%5==0){
+		for(int j=1;j<WIDTH-1;j++){
+			if(gameOrg[gameOverP][j]>10){
+				gameOrg[gameOverP][j]=17;	
+			}
+		}
+		gameOverP++;
+	}
+}
+void Tetris::getAttack(void){
+	if(getAttackRegP<HEIGHT-1){
+		int line=(HEIGHT-1)-(getAttackRegP);
+		if(getAttackRegP<HEIGHT-1){
+			for(int i=4;i<HEIGHT-1;i++){
+				for(int j=1;j<WIDTH-1;j++){
+					if(i-line>0) gameOrg[i-line][j]=gameOrg[i][j];
+					gameOrg[i][j]=EMPTY;
+				}
+			}
+		}
+		for(int i=getAttackRegP+1;i<HEIGHT;i++){
+			for(int j=1;j<WIDTH-1;j++){
+				gameOrg[i-1][j]=getAttackReg[i][j];
+				getAttackReg[i][j]=-1;
+			}
+		}
+		getAttackRegP+=line;
+		for(int i=1;i<10;i++){
+			gotoxy(attackQueue_x, game_y+i);printf("  ");
+		}
+	}
+}
+void Tetris::gameMsg(int x, int y, int type, int val){
+	gameMsgCnt=10;
+	switch(type){
+	case 0:
+		gotoxy(game_x+x,game_y+y);printf("%d COMBO!",val);
+		break;
+	case 1:
+		gotoxy(game_x+x,game_y+y);printf("SPEED UP!!");
+		break;
+	case 2:
+		gotoxy(game_x+x,game_y+y);printf("SPEED DOWN!!");
+		break;
+	}
+}
+void Tetris::gameMsg(void){
+	if(gameMsgCnt>0) gameMsgCnt--;
+	else if(gameMsgCnt==0) {
+		resetGameCpy();
+		gameMsgCnt=-1;
+	}
+}
+void Tetris::gameDelay(int cnt){
+	gameDelay_on=true;
+	gameDelayCnt=cnt;
+}
+void Tetris::gameDelay(void){
+	if(gameDelayCnt>0) gameDelayCnt--;
+	else if(gameDelayCnt==0) gameDelay_on=false;
+}
+
+class BattleTetrisManager{
+public:
+	BattleTetrisManager(void);
+	Tetris* p1;
+	Tetris* p2;
+	int gameMode;
+	
+	void titleMenu(void);
+		void keyInstructions(int menuP);
+
+	void resetManager(void);
+	
+	void gamePlay(Tetris &A);
+	void getKey(void);
+	void pushAttack(Tetris &A, Tetris &B);
+	void checkWinner(Tetris A, Tetris B);
+		bool winner_on;
+};
+
+BattleTetrisManager::BattleTetrisManager(void){ 
+	p1=NULL;
+	p2=NULL;
+}
+
+#define PvC 0
+#define PvP	1
+void BattleTetrisManager::resetManager(void){ 
+	system("cls");
+	delete p1; //
+	delete p2; //
+
+	winner_on=false;
+
+	GetAsyncKeyState(VK_LEFT); 
+	GetAsyncKeyState(VK_RIGHT);
+	GetAsyncKeyState(VK_UP);
+	GetAsyncKeyState(VK_DOWN);
+	GetAsyncKeyState(VK_SPACE);
+	GetAsyncKeyState('L');
+	GetAsyncKeyState('F');
+	GetAsyncKeyState('H');
+	GetAsyncKeyState('G');
+	GetAsyncKeyState('T');
+	GetAsyncKeyState('Q');
+
+	switch(gameMode){
+	case PvC:
+		p1=new Tetris(2,1,14,2, SINGLE);  
+		p2=new Tetris(27,1,22,2, COMPUTER);
+		break;
+	case PvP:
+		p1=new Tetris(2,1,14,2, PLAYER1);  
+		p2=new Tetris(27,1,22,2, PLAYER2);
+		break;
+	}
+}
+void BattleTetrisManager::gamePlay(Tetris &A){		
+
+	if(A.gameMsgCnt>=0)	A.gameMsg();
+
+	if(A.gameDelay_on==true) A.gameDelay();
+	else{  
+		if(A.gameOver_on==false) A.getKey();
+		else A.gameOver();
+		A.drawGame();
+	}
+}
+void BattleTetrisManager::getKey(void){ 
+	if(GetAsyncKeyState(VK_ESCAPE)){
+		delete p1;
+		delete p2;
+		gotoxy(0,24);
+		printf("Thanks for playing :)");
+		exit(0);
+	}
+}
+void BattleTetrisManager::pushAttack(Tetris &A, Tetris &B){
+	if(A.pushAttackRegP<A.HEIGHT-1){
+		int line=(A.HEIGHT-1)-(A.pushAttackRegP);
+		for(int i=B.getAttackRegP+1;i<B.HEIGHT;i++){
+			for(int j=0;j<B.WIDTH-1;j++){
+				if(i-line>0) B.getAttackReg[i-line][j]=B.getAttackReg[i][j];
+			}
+		}
+		for(int i=A.pushAttackRegP+1;i<A.HEIGHT;i++){
+			for(int j=0;j<A.WIDTH-1;j++){
+				B.getAttackReg[i][j]=A.pushAttackReg[i][j];
+				A.pushAttackReg[i][j]=-1;
+			}
+		}
+		B.getAttackRegP-=line;
+		A.pushAttackRegP+=line;
+		
+		int queue=B.HEIGHT-1-B.getAttackRegP;
+		int queueP=0;
+		while(queue>=5){ 
+			gotoxy(B.attackQueue_x, B.game_y+1+queueP);
+			SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x000C);
+			printf("★");
+			queue-=5;
+			queueP++;
+		}
+		SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+		while(queue>=1){ 
+			gotoxy(B.attackQueue_x, B.game_y+1+queueP);
+			printf("○");
+			queue--;
+			queueP++;
+		}
+		while(queueP<10){ 
+			gotoxy(B.attackQueue_x, B.game_y+1+queueP);
+			printf("  ");
+			queueP++;
+		}
+	}
+}
+void BattleTetrisManager::checkWinner(Tetris A, Tetris B){
+
+	if(winner_on==true){ 
+		if(GetAsyncKeyState(VK_RETURN)) resetManager();
+		return;
+	}
+
+	int whoWin;
+	if(winner_on==false && A.gameOver_on==true){
+		winner_on=true;
+		whoWin=B.owner;
+	} else if (winner_on==false && B.gameOver_on==true){
+		winner_on=true;
+		whoWin=A.owner;
+	} else return;
+	
+	gotoxy(15, 10);
+	switch(whoWin){
+	case SINGLE:
+		printf(" <<   YOU WIN!   >>");
+		break;
+	case PLAYER1:
+		printf(" << PLAYER 1 WIN >>");
+		break;
+	case PLAYER2:
+		printf(" << PLAYER 2 WIN >>");
+		break;
+	case COMPUTER:
+		printf(" << COMPUTER WIN >>");
+		break;
+	}
+	gotoxy(14, 12);
+		printf("Press <ENTER> to restart");
+}
+void BattleTetrisManager::keyInstructions(int menuP){
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+	switch(menuP){
+	case PvP:
+		gotoxy(21,15); printf("┌──<  Key Instructions  >──┐");		
+		gotoxy(21,16); printf("│ PLAYER 1            PLAYER 2 │");
+		gotoxy(21,17); printf("│    T       ROTATE      ↑    │"); 
+		gotoxy(21,18); printf("│    H        RIGHT      →    │"); 
+		gotoxy(21,19); printf("│    F        LEFT       ←    │"); 
+		gotoxy(21,20); printf("│    G      SOFT DROP    ↓    │"); 
+		gotoxy(21,21); printf("│    Q      HARD DROP     L    │"); 
+		gotoxy(21,22); printf("└───────────────┘"); 
+		break;
+	case PvC:
+		gotoxy(21,15); printf("┌──<  Key Instructions  >──┐");		
+		gotoxy(21,16); printf("│                   PLAYER     │");
+		gotoxy(21,17); printf("│     ROTATE          ↑       │"); 
+		gotoxy(21,18); printf("│      RIGHT          →       │"); 
+		gotoxy(21,19); printf("│      LEFT           ←       │"); 
+		gotoxy(21,20); printf("│    SOFT DROP        ↓       │"); 
+		gotoxy(21,21); printf("│    HARD DROP      SPACE      │"); 
+		gotoxy(21,22); printf("└───────────────┘"); 
+
+	}
+}

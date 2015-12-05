@@ -7,7 +7,6 @@
 #include "../include/global.h"
 
 int display_menu(void); /* 메뉴를 보여줌 */
-int init_tetris_table(void); /*테트리스판을 초기화 한다. 벽과 공간을 나눔*/
 int display_tetris_table(void); /* 현재의 테트리스판을 보여준다. 블록이 놓이고 쌓인 현재 상태를 보여줌*/
 int game_start(void); /* 게임 시작시 호출되는 함수.   game변수를 참조하여 게임을 종료하거나 시작함 . 게임 시작시 refresh()함수가 콜백함수로 설정되고 타이머를 등록함. */
 int refresh(int);/* 타이머에 콜백함수로 등록되어 계속 새로고침 하면서 호출되는 함수. 키입력 확인,  화면새로고침, 한줄완성검사등의 계속 상태가 변함을 확인해야 되는 함수를 호출한다 */
@@ -30,7 +29,7 @@ int game_start(void)
   
      if(game == GAME_START) 
      { 
-         init_tetris_table(); 
+         init_tetris_table(tetris_table); 
   
          /* Install timer_handler as the signal handler for SIGVTALRM. */
          memset(&sa, 0, sizeof (sa));
@@ -99,14 +98,6 @@ int game_start(void)
  } 
 
 
-
-int drop(void)
-{
-	while(!collision_test(DOWN))
-		move_block(DOWN);
-
-	return 0;
-}
 int collision_test(int command)
 {
 	int i, j;
@@ -180,6 +171,14 @@ int collision_test(int command)
 					return 1;
 		}
 	}
+
+	return 0;
+}
+
+int drop(void)
+{
+	while(!collision_test(DOWN))
+		move_block(DOWN);
 
 	return 0;
 }
@@ -381,6 +380,165 @@ int display_tetris_table(void)
 
 	return 0;
 }
+
+/* 타이머에 콜백함수로 등록되어 계속 새로고침 하면서 호출되는 함수. 키입력 확인,  화면새로고침, 한줄완성검사등의 계속 상태가 변함을 확인해야 되는 함수를 호출한다 */
+int refresh(int signum)
+{
+	static int downcount = 0;
+	static int setcount = 0;
+	static long speedcount = 0;
+	static int countrange = 5;
+	static int firststart = 0;
+
+	char ch;
+
+	srand((unsigned)time(NULL));
+
+	if(firststart == 0)
+	{
+		block_number= rand()%7;
+		if(firststart == 0)
+			firststart++;
+	}
+
+	printf("\n 득점 : %ld | 속도 : %d | 최고점수  : %d", point, countrange, best_point);
+
+	display_tetris_table();
+	check_one_line();
+
+	printf("\n 게임 정지 : P");
+
+	if(downcount == countrange-1)
+	{
+		point += 1;
+		move_block(DOWN);
+	}
+
+	if(speedcount == 499)
+	{
+		if(countrange != 1)
+			countrange--;
+	}
+
+	downcount++;
+	downcount %= countrange;
+	speedcount++;
+	speedcount %= 500;
+
+	if(x == 3 && y == 0)
+	{
+		if(collision_test(LEFT) || collision_test(RIGHT) || collision_test(DOWN) || collision_test(ROTATE))
+		{
+			printf("\n Game End! \n");
+			downcount = 0;
+			setcount = 0;
+			speedcount = 0;
+			countrange = 5;
+			firststart = 0;
+			game = GAME_END;
+		}
+	}
+
+	if(collision_test(DOWN))
+	{
+		if(setcount == 9)
+		{
+			block_number= next_block_number;
+			next_block_number = rand()%7;
+			block_state = 0;
+			x = 3;
+			y = 0;
+		}
+		setcount++;
+		setcount %= 10;
+	}
+
+	ch = getch();
+
+	switch(ch)
+	{
+		case 74	 :
+		case 106 :	move_block(LEFT);
+					  		break;
+		case 76	 :
+		case 108 :	move_block(RIGHT);
+						  	break;
+		case 75	 :
+		case 107 :	move_block(DOWN);
+								break;
+		case 73	 :
+		case 105 :	move_block(ROTATE);
+								break;
+		case 65  :
+		case 97  :	drop();
+								break;
+ 		case 80  :
+ 		case 112 :	downcount = 0;
+ 								setcount = 0;
+ 								speedcount = 0;
+ 								countrange = 5;
+ 								firststart = 0;
+ 								game = GAME_END;
+ 								break;
+ 		default : 	break;
+	}
+	return 0;
+}
+
+/*메뉴에서 기록검색시 호출되어 기러고을 검색하는 함수*/
+int search_result(void)
+{
+	FILE *fp = NULL;
+	char name[30];
+	char ch;
+	int find = 0;
+
+	fp = fopen("result", "rb");
+
+	if(fp == NULL)
+		return 0;
+
+	system("clear");
+
+	printf("\n\n\t\t검색할 이름을 입력하세요.  : ");
+	scanf("%s%*c", name);
+
+	printf("\n\t\t\t\tText Tetris");
+	printf("\n\t\t\t\t 게임 기록\n\n");
+	printf("\n\t\t이름\t\t점수\t   날짜\t\t 시간");
+
+	while(1)
+	{
+		fread(&temp_result, sizeof(struct result), 1, fp);
+		if(!feof(fp))
+		{
+			if(!strcmp(temp_result.name, name))
+			{
+				find = 1;
+				printf("\n\t========================================================");
+				printf("\n\t\t%s\n\t\t\t\t%ld\t%d. %d. %d.  |  %d : %d\n", temp_result.name, temp_result.point, temp_result.year, temp_result.month, temp_result.day, temp_result.hour, temp_result.min);
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if(find == 0)
+		printf("\n\n\n\t\t검색된 이름이 없습니다.");
+
+	printf("\n\n\n\t\t게임 메뉴로 돌아가기 : M");
+	while(1)
+	{
+		ch = getch();
+		if(ch == 77 || ch == 109)
+			break;
+	}
+
+	return 0;
+}
+
 int print_result(void)
 {
 	FILE *fp = NULL;
@@ -423,3 +581,34 @@ int print_result(void)
 	return 0;
 
 }
+
+int main(void)
+{
+	int menu = 1;
+
+	while(menu)
+	{
+		menu = display_menu();
+
+		if(menu == 1)
+		{
+			game = GAME_START;
+			menu = game_start();
+		}
+		else if(menu == 2)
+		{
+			search_result();
+		}
+		else if(menu == 3)
+		{
+			print_result();
+		}
+		else if(menu == 4)
+		{
+			exit(0);
+		}
+	}
+
+	return 0;
+}
+

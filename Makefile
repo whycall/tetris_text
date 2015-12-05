@@ -1,4 +1,4 @@
-DIRS =lib apps
+DIRS =libs apps
 .PHONY: all clean
 
 all: 

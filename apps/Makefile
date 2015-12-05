@@ -1,7 +1,7 @@
 .PHONY: clean
 
 main:main.o
-	gcc -L../lib -lfuncs  main.c -o run 
+	gcc main.c -L../libs -lfuncs -o run 
  
 clean:
 	rm -f libfuncs.a main.o

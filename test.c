@@ -968,3 +968,181 @@ void BattleTetrisManager::keyInstructions(int menuP){
 
 	}
 }
+void BattleTetrisManager::titleMenu(void){ // 게임타이틀
+	int i,j;
+
+	int text_battle_x=3;
+	int text_battle_y=2;
+	
+	int text_tetris_x=16;
+	int text_tetris_y=9;
+	
+	int text_menu_x=4;
+	int text_menu_y=17;
+
+	int menuP=PvC;
+	int totalMenu=2;
+	int menuCnt=0;
+
+	int text_battle_order[9]={0,1,2,3,4,2,1,4,2};
+	int text_battle [5][6][25]={
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+		9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,
+
+		1,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,0,0,0,1,1,1,0,0,
+		1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,
+		1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,1,1,0,0,
+		1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,
+		1,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,0,
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,1,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,0,0,0,1,1,1,0,
+		0,1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,
+		0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,1,1,0,
+		0,1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,
+		0,1,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,
+
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		1,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,0,0,0,1,1,1,0,0,
+		1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,
+		1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,1,1,0,0,
+		1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,
+		1,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,0,
+
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+		0,0,1,1,0,0,0,1,0,0,1,1,1,0,1,1,1,0,1,0,0,0,1,1,1,
+		0,0,1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,
+		0,0,1,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,1,1,
+		0,0,1,0,1,0,1,0,1,0,0,1,0,0,0,1,0,0,1,0,0,0,1,0,0,
+		0,0,1,1,0,0,1,0,1,0,0,1,0,0,0,1,0,0,1,1,1,0,1,1,1
+	};
+
+	int text_tetris [5][21]={
+		1,1,1,0,1,1,1,0,1,1,1,0,1,1,0,0,1,0,1,1,1,
+		0,1,0,0,1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,0,
+		0,1,0,0,1,1,1,0,0,1,0,0,1,1,0,0,1,0,1,1,1,
+		0,1,0,0,1,0,0,0,0,1,0,0,1,0,1,0,1,0,0,0,1,
+		0,1,0,0,1,1,1,0,0,1,0,0,1,0,1,0,1,0,1,1,1
+	};
+	
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0003);
+	for(int k=1;k<9;k++){
+		for(i=0;i<6;i++){
+			for(j=0;j<25;j++){
+				if(text_battle[text_battle_order[k]][i][j]!=text_battle[text_battle_order[k-1]][i][j]){
+					gotoxy(text_battle_x+j,text_battle_y+i); 
+					if(text_battle[text_battle_order[k]][i][j]==1) printf("■");
+					else if(text_battle[text_battle_order[k]][i][j]==0) printf("  ");
+				}
+			}
+		}
+		Sleep(100);
+	}
+	Sleep(200);
+
+	
+	
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x000F);
+	gotoxy(text_menu_x,text_menu_y); printf("    1. PLAYER VS COMPUTER");
+	gotoxy(text_menu_x,text_menu_y+2); printf("    2. PLAYER 1 VS PLAYER 2");
+	
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+	gotoxy(33,7); printf("ver. 1.0");
+
+	
+	keyInstructions(menuP);
+	gotoxy(21,23); printf("			 BW,JW		");
+
+	for(int cnt=0;;cnt++){
+		if(menuCnt>0) menuCnt--;
+		Sleep(10);
+
+		if((cnt+0)%60==0){
+			switch(menuP){
+			case PvC:
+				gotoxy(text_menu_x,text_menu_y); 
+				break;
+			case PvP:
+				gotoxy(text_menu_x,text_menu_y+2); 
+				break;
+			}
+			SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x000F);
+			printf(" →");
+		}
+		if((cnt+30)%60==0){
+			switch(menuP){
+			case PvC:
+				gotoxy(text_menu_x,text_menu_y); 
+				break;
+			case PvP:
+				gotoxy(text_menu_x,text_menu_y+2); 
+				break;
+			}
+			SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x000F);
+			printf("→ ");
+		}
+		if(cnt%75==0){	
+			SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), cnt%7+2);
+			for(i=0;i<5;i++){
+				for(j=0;j<21;j++){
+					gotoxy(text_tetris_x+j,text_tetris_y+i);
+					if(text_tetris[i][j]==1) printf("▣");
+				}
+			}
+		}
+		if(GetAsyncKeyState(VK_UP)&&menuCnt==0){
+			menuCnt=20;
+			gotoxy(text_menu_x,text_menu_y); printf("   ");
+			gotoxy(text_menu_x,text_menu_y+2); printf("   ");
+			menuP=(menuP+1)%totalMenu;
+			keyInstructions(menuP);
+		}
+		if(GetAsyncKeyState(VK_DOWN)&&menuCnt==0){
+			menuCnt=20;
+			gotoxy(text_menu_x,text_menu_y); printf("   ");
+			gotoxy(text_menu_x,text_menu_y+2); printf("   ");
+			menuP=(menuP+totalMenu-1)%totalMenu;
+			keyInstructions(menuP);
+		}
+		if(GetAsyncKeyState(VK_RETURN)){
+			gameMode=menuP;
+			break;
+		}
+		if(GetAsyncKeyState('1')){
+			gameMode=PvC;
+			break;
+		}
+		if(GetAsyncKeyState('2')){
+			gameMode=PvP;
+			break;
+		}
+	}
+	SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE ), 0x0007);
+}
+
+int main(){
+	srand((unsigned)time(NULL)); //난수표생성 
+	setcursortype(NOCURSOR); //커서 없앰 
+	
+	BattleTetrisManager GM; //게임메니져생성
+	GM.titleMenu(); //게임타이틀
+	GM.resetManager(); // 게임메니져 리셋
+	
+	Tetris &player1=*GM.p1;
+	Tetris &player2=*GM.p2;
+	
+	while(1){
+		Sleep(20);
+		GM.getKey();
+		GM.gamePlay(player1);	
+		GM.gamePlay(player2);
+		GM.pushAttack(player1, player2);
+		GM.pushAttack(player2, player1);
+		GM.checkWinner(player1, player2);
+	}
+}//끝! 
